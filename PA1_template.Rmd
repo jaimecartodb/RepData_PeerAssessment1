@@ -1,25 +1,85 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+Assignment #1 by Jaime de Mora
+
+First we're going to upload the data
+
+```{r, echo=TRUE}
+activity <- read.csv('activity.csv', stringsAsFactors = FALSE)
+str(activity)
+activity$date <- as.Date(activity$date)
+```
+
+Let's count the number of steps
+
+```{r, echo=TRUE}
+activity_clean <- activity[which(!is.na(activity$steps)),]
+perday <- tapply(activity_clean$steps, activity_clean$date, sum)
+mean(perday)
+median(perday)
+hist(perday, 20)
+```
+
+### Average Daily Activity Pattern
+
+```{r, echo=TRUE}
+daily_activity <- tapply(activity_clean$steps, activity_clean$interval, sum)
+plot(y=daily_activity, x=names(daily_activity), type="l")
+```
+
+And the 5 minute inverval with a highest number of steps is:
+
+```{r, echo=TRUE}
+daily_activity[daily_activity==max(daily_activity)]
+```
+
+### Inputting missing values
+```{r, echo=TRUE}
+sum(is.na(activity$steps))
+
+act_new <- activity
+act_new$steps[is.na(act_new$steps)] <- mean(activity$steps, na.rm=TRUE)
+
+sum(is.na(act_new))
+
+sum_steps <- aggregate(act_new$steps, by=list(act_new$date),FUN=sum,na.rm=TRUE)
+
+par(mfrow=c(1,2))
+hist(perday, 20, main ="Total Number of Steps")
+hist(sum_steps$x, 20, main = "Total Number of Steps (with no NAs)")
+```
+
+Now let's calculate the difference of mean and median between the original and filled in dataset
+
+```{r}
+mean(sum_steps$x)
+median(sum_steps$x)
+
+mean(perday)
+median(perday)
+```
+
+## Difference between weekdays and weekends
+
+Let's see the difference in terms of activity between both categories
+
+```{r}
+act_new$wd<-weekdays(act_new$date)
+act_new$fwd<- as.factor(c("weekend", "weekday"))
+act_new[act_new$wd == "Sunday" | act_new$wd == "Saturday" ,5]<- factor("weekend")
+act_new[!(act_new$wd == "Sunday" | act_new$wd == "Saturday"),5 ]<- factor("weekday")
+```
+
+```{r}
+act_new_we <- subset(act_new, fwd == "weekend") 
+act_new_wd <- subset(act_new, fwd == "weekday") 
+dailyact_we<-tapply(act_new_we$steps, act_new_we$interval, mean)
+dailyact_wd<-tapply(act_new_wd$steps, act_new_wd$interval, mean)
+par(mfrow=c(2,1))
+plot(y = dailyact_wd, x = names(dailyact_wd), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekdays", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+plot(y = dailyact_we, x = names(dailyact_we), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekends", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+```
 
 
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
